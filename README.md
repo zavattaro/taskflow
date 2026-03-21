@@ -8,7 +8,7 @@ Construir uma aplicação onde usuários autenticados possam criar projetos, cad
 ## Stack inicial
 - Angular
 - ASP.NET Core Web API
-- .NET 10
+- .NET 8
 - Entity Framework Core
 - PostgreSQL
 - Docker
