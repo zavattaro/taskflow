@@ -1,4 +1,4 @@
-﻿namespace TaskFlow.Api.Projects;
+﻿namespace TaskFlow.Api.Contracts.Projects;
 
 public class ProjectResponse
 {

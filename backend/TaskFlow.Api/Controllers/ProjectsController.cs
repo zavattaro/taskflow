@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
-using TaskFlow.Api.Projects;
+using TaskFlow.Api.Contracts.Projects;
 using TaskFlow.Domain.Entities;
 using TaskFlow.Infrastructure.Persistence;
 
