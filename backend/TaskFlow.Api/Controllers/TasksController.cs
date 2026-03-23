@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 using TaskFlow.Api.Contracts.Tasks;
+using TaskFlow.Api.Controllers.Base;
 using TaskFlow.Domain.Entities;
 using TaskFlow.Domain.Enums;
 using TaskFlow.Infrastructure.Persistence;
@@ -12,7 +12,7 @@ namespace TaskFlow.Api.Controllers;
 [ApiController]
 [Authorize]
 [Route("api/projects/{projectId:guid}/tasks")]
-public class TasksController : ControllerBase
+public class TasksController : AuthenticatedControllerBase
 {
     private readonly AppDbContext _context;
 
@@ -30,13 +30,10 @@ public class TasksController : ControllerBase
         if (string.IsNullOrWhiteSpace(title))
             return BadRequest(new { message = "Title is required." });
 
-        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-        if (!Guid.TryParse(userIdClaim, out var userId))
+        if (!TryGetAuthenticatedUserId(out var userId))
             return Unauthorized(new { message = "Invalid user context." });
 
-        var projectExists = await _context.Projects
-            .AnyAsync(x => x.Id == projectId && x.UserId == userId);
+        var projectExists = await ProjectBelongsToUserAsync(projectId, userId);
 
         if (!projectExists)
             return NotFound(new { message = "Project not found." });
@@ -68,13 +65,10 @@ public class TasksController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAll(Guid projectId)
     {
-        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-        if (!Guid.TryParse(userIdClaim, out var userId))
+        if (!TryGetAuthenticatedUserId(out var userId))
             return Unauthorized(new { message = "Invalid user context." });
 
-        var projectExists = await _context.Projects
-            .AnyAsync(x => x.Id == projectId && x.UserId == userId);
+        var projectExists = await ProjectBelongsToUserAsync(projectId, userId);
 
         if (!projectExists)
             return NotFound(new { message = "Project not found." });
@@ -107,13 +101,10 @@ public class TasksController : ControllerBase
         if (string.IsNullOrWhiteSpace(statusValue))
             return BadRequest(new { message = "Status is required." });
 
-        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-        if (!Guid.TryParse(userIdClaim, out var userId))
+        if (!TryGetAuthenticatedUserId(out var userId))
             return Unauthorized(new { message = "Invalid user context." });
 
-        var projectExists = await _context.Projects
-            .AnyAsync(x => x.Id == projectId && x.UserId == userId);
+        var projectExists = await ProjectBelongsToUserAsync(projectId, userId);
 
         if (!projectExists)
             return NotFound(new { message = "Project not found." });
@@ -146,5 +137,11 @@ public class TasksController : ControllerBase
         };
 
         return Ok(response);
+    }
+
+    private async Task<bool> ProjectBelongsToUserAsync(Guid projectId, Guid userId)
+    {
+        return await _context.Projects
+            .AnyAsync(x => x.Id == projectId && x.UserId == userId);
     }
 }

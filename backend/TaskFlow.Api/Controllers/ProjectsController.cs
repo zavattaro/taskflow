@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using TaskFlow.Api.Contracts.Projects;
+using TaskFlow.Api.Controllers.Base;
 using TaskFlow.Domain.Entities;
 using TaskFlow.Infrastructure.Persistence;
 
@@ -11,7 +12,7 @@ namespace TaskFlow.Api.Controllers;
 [ApiController]
 [Authorize]
 [Route("api/[controller]")]
-public class ProjectsController : ControllerBase
+public class ProjectsController : AuthenticatedControllerBase
 {
     private readonly AppDbContext _context;
 
@@ -29,9 +30,7 @@ public class ProjectsController : ControllerBase
         if (string.IsNullOrWhiteSpace(name))
             return BadRequest(new { message = "Name is required." });
 
-        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-        if (!Guid.TryParse(userIdClaim, out var userId))
+        if (!TryGetAuthenticatedUserId(out var userId))
             return Unauthorized(new { message = "Invalid user context." });
 
         var project = new Project
@@ -58,9 +57,7 @@ public class ProjectsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
-        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-        if (!Guid.TryParse(userIdClaim, out var userId))
+        if (!TryGetAuthenticatedUserId(out var userId))
             return Unauthorized(new { message = "Invalid user context." });
 
         var projects = await _context.Projects
