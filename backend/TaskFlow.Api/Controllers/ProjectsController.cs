@@ -1,10 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 using TaskFlow.Api.Contracts.Projects;
 using TaskFlow.Api.Controllers.Base;
-using TaskFlow.Domain.Entities;
+using TaskFlow.Application.Projects.CreateProject;
 using TaskFlow.Infrastructure.Persistence;
 
 namespace TaskFlow.Api.Controllers;
@@ -15,10 +14,12 @@ namespace TaskFlow.Api.Controllers;
 public class ProjectsController : AuthenticatedControllerBase
 {
     private readonly AppDbContext _context;
+    private readonly CreateProjectUseCase _createProjectUseCase;
 
-    public ProjectsController(AppDbContext context)
+    public ProjectsController(AppDbContext context, CreateProjectUseCase createProjectUseCase)
     {
         _context = context;
+        _createProjectUseCase = createProjectUseCase;
     }
 
     [HttpPost]
@@ -33,25 +34,18 @@ public class ProjectsController : AuthenticatedControllerBase
         if (!TryGetAuthenticatedUserId(out var userId))
             return Unauthorized(new { message = "Invalid user context." });
 
-        var project = new Project
-        {
-            Id = Guid.NewGuid(),
-            Name = name,
-            Description = string.IsNullOrWhiteSpace(description) ? null : description,
-            UserId = userId
-        };
+        var command = new CreateProjectCommand(userId, name, description);
 
-        _context.Projects.Add(project);
-        await _context.SaveChangesAsync();
+        var result = await _createProjectUseCase.ExecuteAsync(command);
 
         var response = new ProjectResponse
         {
-            Id = project.Id,
-            Name = project.Name,
-            Description = project.Description
+            Id = result.ProjectId,
+            Name = result.Name,
+            Description = result.Description
         };
 
-        return Created($"/api/projects/{project.Id}", response);
+        return Created($"/api/projects/{result.ProjectId}", response);
     }
 
     [HttpGet]

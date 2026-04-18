@@ -4,6 +4,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using TaskFlow.Application.Projects.CreateProject;
+using TaskFlow.Application.Tasks.CreateTaskItem;
+using TaskFlow.Application.Tasks.GetTasksByProject;
+using TaskFlow.Application.Tasks.UpdateTaskStatus;
 using TaskFlow.Domain.Entities;
 using TaskFlow.Infrastructure.Persistence;
 
@@ -51,6 +55,11 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
+builder.Services.AddScoped<CreateProjectUseCase>();
+builder.Services.AddScoped<CreateTaskItemUseCase>();
+builder.Services.AddScoped<UpdateTaskStatusUseCase>();
+builder.Services.AddScoped<GetTasksByProjectUseCase>();
+
 var jwtKey = builder.Configuration["Jwt:Key"]
     ?? throw new InvalidOperationException("JWT key not configured.");
 
@@ -88,7 +97,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AngularDev", policy =>
     {
         policy
-            .WithOrigins("http://localhost:4200")
+            .WithOrigins("http://localhost:4200", "https://localhost:4200")
             .AllowAnyHeader()
             .AllowAnyMethod();
     });

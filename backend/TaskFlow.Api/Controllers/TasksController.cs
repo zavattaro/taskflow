@@ -3,7 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TaskFlow.Api.Contracts.Tasks;
 using TaskFlow.Api.Controllers.Base;
-using TaskFlow.Domain.Entities;
+using TaskFlow.Application.Tasks.CreateTaskItem;
+using TaskFlow.Application.Tasks.GetTasksByProject;
+using TaskFlow.Application.Tasks.UpdateTaskStatus;
 using TaskFlow.Domain.Enums;
 using TaskFlow.Infrastructure.Persistence;
 
@@ -15,10 +17,16 @@ namespace TaskFlow.Api.Controllers;
 public class TasksController : AuthenticatedControllerBase
 {
     private readonly AppDbContext _context;
+    private readonly CreateTaskItemUseCase _createTaskItemUseCase;
+    private readonly UpdateTaskStatusUseCase _updateTaskStatusUseCase;
+    private readonly GetTasksByProjectUseCase _getTasksByProjectUseCase;
 
-    public TasksController(AppDbContext context)
+    public TasksController(AppDbContext context, CreateTaskItemUseCase createTaskItemUseCase, UpdateTaskStatusUseCase updateTaskStatusUseCase, GetTasksByProjectUseCase getTasksByProjectUseCase)
     {
         _context = context;
+        _createTaskItemUseCase = createTaskItemUseCase;
+        _updateTaskStatusUseCase = updateTaskStatusUseCase;
+        _getTasksByProjectUseCase = getTasksByProjectUseCase;
     }
 
     [HttpPost]
@@ -38,63 +46,32 @@ public class TasksController : AuthenticatedControllerBase
         if (!projectExists)
             return NotFound(new { message = "Project not found." });
 
-        var taskItem = new TaskItem
-        {
-            Id = Guid.NewGuid(),
-            Title = title,
-            Description = string.IsNullOrWhiteSpace(description) ? null : description,
-            Status = TaskItemsStatus.Todo,
-            ProjectId = projectId
-        };
+        var command = new CreateTaskItemCommand(
+            projectId,
+            userId,
+            title,
+            description
+        );
 
-        _context.Tasks.Add(taskItem);
-        await _context.SaveChangesAsync();
+        var result = await _createTaskItemUseCase.ExecuteAsync(command);
 
         var response = new TaskItemResponse
         {
-            Id = taskItem.Id,
-            Title = taskItem.Title,
-            Description = taskItem.Description,
-            Status = taskItem.Status.ToString(),
-            ProjectId = taskItem.ProjectId
+            Id = result.TaskItemId,
+            Title = result.Title,
+            Description = result.Description,
+            Status = result.Status,
+            ProjectId = result.ProjectId
         };
 
-        return Created($"/api/projects/{projectId}/tasks/{taskItem.Id}", response);
-    }
-
-    [HttpGet]
-    public async Task<IActionResult> GetAll(Guid projectId)
-    {
-        if (!TryGetAuthenticatedUserId(out var userId))
-            return Unauthorized(new { message = "Invalid user context." });
-
-        var projectExists = await ProjectBelongsToUserAsync(projectId, userId);
-
-        if (!projectExists)
-            return NotFound(new { message = "Project not found." });
-
-        var tasks = await _context.Tasks
-            .AsNoTracking()
-            .Where(x => x.ProjectId == projectId)
-            .OrderBy(x => x.Title)
-            .Select(x => new TaskItemResponse
-            {
-                Id = x.Id,
-                Title = x.Title,
-                Description = x.Description,
-                Status = x.Status.ToString(),
-                ProjectId = x.ProjectId
-            })
-            .ToListAsync();
-
-        return Ok(tasks);
+        return Created(
+            $"/api/projects/{projectId}/tasks/{result.TaskItemId}",
+            response
+        );
     }
 
     [HttpPatch("{taskId:guid}/status")]
-    public async Task<IActionResult> UpdateStatus(
-    Guid projectId,
-    Guid taskId,
-    UpdateTaskItemStatusRequest request)
+    public async Task<IActionResult> UpdateStatus(Guid projectId, Guid taskId, UpdateTaskItemStatusRequest request)
     {
         var statusValue = request.Status?.Trim();
 
@@ -127,14 +104,51 @@ public class TasksController : AuthenticatedControllerBase
 
         await _context.SaveChangesAsync();
 
+        var command = new UpdateTaskStatusCommand(projectId, taskId, statusValue);
+
+        var result = await _updateTaskStatusUseCase.ExecuteAsync(command);
+
+        if (result is null)
+            return BadRequest(new
+            {
+                message = "Invalid status. Allowed values: Todo, Doing, Done."
+            });
+
         var response = new TaskItemResponse
         {
-            Id = taskItem.Id,
-            Title = taskItem.Title,
-            Description = taskItem.Description,
-            Status = taskItem.Status.ToString(),
-            ProjectId = taskItem.ProjectId
+            Id = result.TaskItemId,
+            Title = result.Title,
+            Description = result.Description,
+            Status = result.Status,
+            ProjectId = result.ProjectId
         };
+
+        return Ok(response);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetAll(Guid projectId)
+    {
+        if (!TryGetAuthenticatedUserId(out var userId))
+            return Unauthorized(new { message = "Invalid user context." });
+
+        var projectExists = await ProjectBelongsToUserAsync(projectId, userId);
+
+        if (!projectExists)
+            return NotFound(new { message = "Project not found." });
+
+        var query = new GetTasksByProjectQuery(projectId);
+
+        var tasks = await _getTasksByProjectUseCase.ExecuteAsync(query);
+
+        var response = tasks.Select(x => new TaskItemResponse
+        {
+            Id = x.Id,
+            Title = x.Title,
+            Description = x.Description,
+            Status = x.Status,
+            ProjectId = x.ProjectId
+        });
 
         return Ok(response);
     }
