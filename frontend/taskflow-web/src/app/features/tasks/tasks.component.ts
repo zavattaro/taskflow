@@ -239,7 +239,7 @@ export class TasksComponent implements OnInit {
     return (event.target as HTMLSelectElement).value;
   }
 
-  selectedStatuses: Record<string, string> = {};
+  selectedStatuses: Record<string, string | undefined> = {};
 
   setSelectedStatus(taskId: string, status: string): void {
   this.selectedStatuses[taskId] = status;
