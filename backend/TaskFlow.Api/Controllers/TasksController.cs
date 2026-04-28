@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TaskFlow.Api.Contracts.Tasks;
 using TaskFlow.Api.Controllers.Base;
+using TaskFlow.Api.Errors;
 using TaskFlow.Application.Tasks.CreateTaskItem;
 using TaskFlow.Application.Tasks.GetTasksByProject;
 using TaskFlow.Application.Tasks.UpdateTaskStatus;
@@ -36,15 +37,15 @@ public class TasksController : AuthenticatedControllerBase
         var description = request.Description?.Trim();
 
         if (string.IsNullOrWhiteSpace(title))
-            return BadRequest(new { message = "Title is required." });
+            return BadRequest(new { message = ErrorMessages.TitleRequired });
 
         if (!TryGetAuthenticatedUserId(out var userId))
-            return Unauthorized(new { message = "Invalid user context." });
+            return Unauthorized(new { message = ErrorMessages.InvalidUserContext });
 
         var projectExists = await ProjectBelongsToUserAsync(projectId, userId);
 
         if (!projectExists)
-            return NotFound(new { message = "Project not found." });
+            return NotFound(new { message = ErrorMessages.ProjectNotFound });
 
         var command = new CreateTaskItemCommand(
             projectId,
@@ -76,33 +77,15 @@ public class TasksController : AuthenticatedControllerBase
         var statusValue = request.Status?.Trim();
 
         if (string.IsNullOrWhiteSpace(statusValue))
-            return BadRequest(new { message = "Status is required." });
+            return BadRequest(new { message = ErrorMessages.StatusRequired });
 
         if (!TryGetAuthenticatedUserId(out var userId))
-            return Unauthorized(new { message = "Invalid user context." });
+            return Unauthorized(new { message = ErrorMessages.InvalidUserContext });
 
         var projectExists = await ProjectBelongsToUserAsync(projectId, userId);
 
         if (!projectExists)
-            return NotFound(new { message = "Project not found." });
-
-        var taskItem = await _context.Tasks
-            .FirstOrDefaultAsync(x => x.Id == taskId && x.ProjectId == projectId);
-
-        if (taskItem is null)
-            return NotFound(new { message = "Task not found." });
-
-        var parsed = Enum.TryParse<TaskItemsStatus>(statusValue, true, out var newStatus);
-
-        if (!parsed)
-            return BadRequest(new
-            {
-                message = "Invalid status. Allowed values: Todo, Doing, Done."
-            });
-
-        taskItem.Status = newStatus;
-
-        await _context.SaveChangesAsync();
+            return NotFound(new { message = ErrorMessages.ProjectNotFound });
 
         var command = new UpdateTaskStatusCommand(projectId, taskId, statusValue);
 
@@ -111,7 +94,7 @@ public class TasksController : AuthenticatedControllerBase
         if (result is null)
             return BadRequest(new
             {
-                message = "Invalid status. Allowed values: Todo, Doing, Done."
+                message = ErrorMessages.InvalidStatus
             });
 
         var response = new TaskItemResponse
@@ -130,12 +113,12 @@ public class TasksController : AuthenticatedControllerBase
     public async Task<IActionResult> GetAll(Guid projectId)
     {
         if (!TryGetAuthenticatedUserId(out var userId))
-            return Unauthorized(new { message = "Invalid user context." });
+            return Unauthorized(new { message = ErrorMessages.InvalidUserContext });
 
         var projectExists = await ProjectBelongsToUserAsync(projectId, userId);
 
         if (!projectExists)
-            return NotFound(new { message = "Project not found." });
+            return NotFound(new { message = ErrorMessages.ProjectNotFound });
 
         var query = new GetTasksByProjectQuery(projectId);
 

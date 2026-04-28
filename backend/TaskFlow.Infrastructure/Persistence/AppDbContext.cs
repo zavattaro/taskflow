@@ -47,6 +47,8 @@ public class AppDbContext : DbContext
             entity.Property(x => x.Description)
                 .HasMaxLength(500);
 
+            entity.HasIndex(x => x.UserId);
+
             entity.HasOne(x => x.User)
                 .WithMany(x => x.Projects)
                 .HasForeignKey(x => x.UserId)
@@ -63,6 +65,8 @@ public class AppDbContext : DbContext
 
             entity.Property(x => x.Description)
                 .HasMaxLength(1000);
+
+            entity.HasIndex(x => x.ProjectId);
 
             entity.HasOne(x => x.Project)
                 .WithMany(x => x.Tasks)

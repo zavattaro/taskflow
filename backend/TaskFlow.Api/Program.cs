@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using TaskFlow.Api.Middlewares;
 using TaskFlow.Application.Projects.CreateProject;
 using TaskFlow.Application.Tasks.CreateTaskItem;
 using TaskFlow.Application.Tasks.GetTasksByProject;
@@ -112,6 +113,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseCors("AngularDev");
 

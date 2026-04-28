@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TaskFlow.Api.Contracts.Projects;
 using TaskFlow.Api.Controllers.Base;
+using TaskFlow.Api.Errors;
 using TaskFlow.Application.Projects.CreateProject;
 using TaskFlow.Infrastructure.Persistence;
 
@@ -29,10 +30,10 @@ public class ProjectsController : AuthenticatedControllerBase
         var description = request.Description?.Trim();
 
         if (string.IsNullOrWhiteSpace(name))
-            return BadRequest(new { message = "Name is required." });
+            return BadRequest(new { message = ErrorMessages.NameRequired });
 
         if (!TryGetAuthenticatedUserId(out var userId))
-            return Unauthorized(new { message = "Invalid user context." });
+            return Unauthorized(new { message = ErrorMessages.InvalidUserContext });
 
         var command = new CreateProjectCommand(userId, name, description);
 
@@ -52,7 +53,7 @@ public class ProjectsController : AuthenticatedControllerBase
     public async Task<IActionResult> GetAll()
     {
         if (!TryGetAuthenticatedUserId(out var userId))
-            return Unauthorized(new { message = "Invalid user context." });
+            return Unauthorized(new { message = ErrorMessages.InvalidUserContext });
 
         var projects = await _context.Projects
             .AsNoTracking()

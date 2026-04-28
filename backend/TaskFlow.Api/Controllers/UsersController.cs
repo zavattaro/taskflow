@@ -7,6 +7,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using TaskFlow.Api.Contracts.Users;
+using TaskFlow.Api.Errors;
 using TaskFlow.Domain.Entities;
 using TaskFlow.Infrastructure.Persistence;
 
@@ -34,30 +35,30 @@ public class UsersController : ControllerBase
         var password = request.Password?.Trim();
 
         if (string.IsNullOrWhiteSpace(email))
-            return BadRequest(new { message = "Email is required." });
+            return BadRequest(new { message = ErrorMessages.EmailRequired });
 
         if (string.IsNullOrWhiteSpace(password))
-            return BadRequest(new { message = "Password is required." });
+            return BadRequest(new { message = ErrorMessages.PasswordRequired });
 
         var user = await _context.Users
             .FirstOrDefaultAsync(x => x.Email == email);
 
         if (user is null)
-            return Unauthorized(new { message = "Invalid credentials." });
+            return Unauthorized(new { message = ErrorMessages.InvalidCredentials });
 
         var passwordVerificationResult = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, password);
 
         if (passwordVerificationResult == PasswordVerificationResult.Failed)
-            return Unauthorized(new { message = "Invalid credentials." });
+            return Unauthorized(new { message = ErrorMessages.InvalidCredentials });
 
         var jwtKey = _configuration["Jwt:Key"]
-        ?? throw new InvalidOperationException("JWT key not configured.");
+        ?? throw new InvalidOperationException(ErrorMessages.JwtKeyNotConfigured);
 
         var jwtIssuer = _configuration["Jwt:Issuer"]
-            ?? throw new InvalidOperationException("JWT issuer not configured.");
+            ?? throw new InvalidOperationException(ErrorMessages.JwtIssuerNotConfigured);
 
         var jwtAudience = _configuration["Jwt:Audience"]
-            ?? throw new InvalidOperationException("JWT audience not configured.");
+            ?? throw new InvalidOperationException(ErrorMessages.JwtAudienceNotConfigured);
 
         var expirationInHours = int.TryParse(_configuration["Jwt:ExpirationInHours"], out var hours)
             ? hours
@@ -97,22 +98,6 @@ public class UsersController : ControllerBase
         return Ok(response);
     }
 
-    [Authorize]
-    [HttpGet("me")]
-    public IActionResult Me()
-    {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        var name = User.FindFirst(ClaimTypes.Name)?.Value;
-        var email = User.FindFirst(ClaimTypes.Email)?.Value;
-
-        return Ok(new
-        {
-            id = userId,
-            name,
-            email
-        });
-    }
-
     [HttpPost("register")]
     public async Task<IActionResult> Register(RegisterUserRequest request)
     {
@@ -121,19 +106,19 @@ public class UsersController : ControllerBase
         var password = request.Password?.Trim();
 
         if (string.IsNullOrWhiteSpace(name))
-            return BadRequest(new { message = "Name is required." });
+            return BadRequest(new { message = ErrorMessages.NameRequired });
 
         if (string.IsNullOrWhiteSpace(email))
-            return BadRequest(new { message = "Email is required." });
+            return BadRequest(new { message = ErrorMessages.EmailRequired });
 
         if (string.IsNullOrWhiteSpace(password))
-            return BadRequest(new { message = "Password is required." });
+            return BadRequest(new { message = ErrorMessages.PasswordRequired });
 
         var emailAlreadyExists = await _context.Users
             .AnyAsync(x => x.Email == email);
 
         if (emailAlreadyExists)
-            return Conflict(new { message = "Email already registered." });
+            return Conflict(new { message = ErrorMessages.EmailAlreadyRegistered });
 
         var user = new User
         {
