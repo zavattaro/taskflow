@@ -1,11 +1,6 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
 using TaskFlow.Api.Contracts.Users;
 using TaskFlow.Api.Errors;
 using TaskFlow.Application.Users.LoginUser;
@@ -20,13 +15,11 @@ public class UsersController : ControllerBase
 {
     private readonly AppDbContext _context;
     private readonly IPasswordHasher<User> _passwordHasher;
-    private readonly IConfiguration _configuration;
 
-    public UsersController(AppDbContext context, IPasswordHasher<User> passwordHasher, IConfiguration configuration)
+    public UsersController(AppDbContext context, IPasswordHasher<User> passwordHasher)
     {
         _context = context;
         _passwordHasher = passwordHasher;
-        _configuration = configuration;
     }
 
     [HttpPost("login")]

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using TaskFlow.Api.Authorization;
 using TaskFlow.Api.Contracts.Tasks;
 using TaskFlow.Api.Controllers.Base;
 using TaskFlow.Api.Errors;
@@ -42,7 +43,7 @@ public class TasksController : AuthenticatedControllerBase
         if (!TryGetAuthenticatedUserId(out var userId))
             return Unauthorized(new { message = ErrorMessages.InvalidUserContext });
 
-        var projectExists = await ProjectBelongsToUserAsync(projectId, userId);
+        var projectExists = await ProjectAuthorizationHelper.UserOwnsProjectAsync(_context, projectId, userId);
 
         if (!projectExists)
             return NotFound(new { message = ErrorMessages.ProjectNotFound });
@@ -82,7 +83,7 @@ public class TasksController : AuthenticatedControllerBase
         if (!TryGetAuthenticatedUserId(out var userId))
             return Unauthorized(new { message = ErrorMessages.InvalidUserContext });
 
-        var projectExists = await ProjectBelongsToUserAsync(projectId, userId);
+        var projectExists = await ProjectAuthorizationHelper.UserOwnsProjectAsync(_context, projectId, userId);
 
         if (!projectExists)
             return NotFound(new { message = ErrorMessages.ProjectNotFound });
@@ -115,7 +116,7 @@ public class TasksController : AuthenticatedControllerBase
         if (!TryGetAuthenticatedUserId(out var userId))
             return Unauthorized(new { message = ErrorMessages.InvalidUserContext });
 
-        var projectExists = await ProjectBelongsToUserAsync(projectId, userId);
+        var projectExists = await ProjectAuthorizationHelper.UserOwnsProjectAsync(_context, projectId, userId);
 
         if (!projectExists)
             return NotFound(new { message = ErrorMessages.ProjectNotFound });
@@ -134,11 +135,5 @@ public class TasksController : AuthenticatedControllerBase
         });
 
         return Ok(response);
-    }
-
-    private async Task<bool> ProjectBelongsToUserAsync(Guid projectId, Guid userId)
-    {
-        return await _context.Projects
-            .AnyAsync(x => x.Id == projectId && x.UserId == userId);
     }
 }
