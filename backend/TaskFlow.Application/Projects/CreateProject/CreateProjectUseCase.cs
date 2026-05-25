@@ -14,16 +14,11 @@ public sealed class CreateProjectUseCase
 
     public async Task<CreateProjectResult> ExecuteAsync(CreateProjectCommand command)
     {
-        var name = command.Name.Trim();
-        var description = command.Description?.Trim();
-
-        var project = new Project
-        {
-            Id = Guid.NewGuid(),
-            Name = name,
-            Description = string.IsNullOrWhiteSpace(description) ? null : description,
-            UserId = command.UserId
-        };
+        var project = Project.Create(
+            command.UserId,
+            command.Name,
+            command.Description
+        );
 
         _context.Projects.Add(project);
         await _context.SaveChangesAsync();

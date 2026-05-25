@@ -1,5 +1,4 @@
 ﻿using TaskFlow.Domain.Entities;
-using TaskFlow.Domain.Enums;
 using TaskFlow.Infrastructure.Persistence;
 
 namespace TaskFlow.Application.Tasks.CreateTaskItem;
@@ -15,17 +14,11 @@ public sealed class CreateTaskItemUseCase
 
     public async Task<CreateTaskItemResult> ExecuteAsync(CreateTaskItemCommand command)
     {
-        var title = command.Title.Trim();
-        var description = command.Description?.Trim();
-
-        var taskItem = new TaskItem
-        {
-            Id = Guid.NewGuid(),
-            Title = title,
-            Description = string.IsNullOrWhiteSpace(description) ? null : description,
-            Status = TaskItemsStatus.Todo,
-            ProjectId = command.ProjectId
-        };
+        var taskItem = TaskItem.Create(
+            command.ProjectId,
+            command.Title,
+            command.Description
+        );
 
         _context.Tasks.Add(taskItem);
         await _context.SaveChangesAsync();

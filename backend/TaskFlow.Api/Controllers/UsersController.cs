@@ -8,6 +8,7 @@ using System.Security.Claims;
 using System.Text;
 using TaskFlow.Api.Contracts.Users;
 using TaskFlow.Api.Errors;
+using TaskFlow.Application.Users.LoginUser;
 using TaskFlow.Domain.Entities;
 using TaskFlow.Infrastructure.Persistence;
 
@@ -29,73 +30,31 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost("login")]
-    public async Task<IActionResult> Login(LoginUserRequest request)
+    public async Task<IActionResult> Login(
+    LoginUserRequest request,
+    [FromServices] LoginUserUseCase loginUserUseCase)
     {
-        var email = request.Email?.Trim().ToLowerInvariant();
-        var password = request.Password?.Trim();
-
-        if (string.IsNullOrWhiteSpace(email))
+        if (string.IsNullOrWhiteSpace(request.Email))
             return BadRequest(new { message = ErrorMessages.EmailRequired });
 
-        if (string.IsNullOrWhiteSpace(password))
+        if (string.IsNullOrWhiteSpace(request.Password))
             return BadRequest(new { message = ErrorMessages.PasswordRequired });
 
-        var user = await _context.Users
-            .FirstOrDefaultAsync(x => x.Email == email);
+        var command = new LoginUserCommand(
+            request.Email,
+            request.Password
+        );
 
-        if (user is null)
+        var result = await loginUserUseCase.ExecuteAsync(command);
+
+        if (result is null)
             return Unauthorized(new { message = ErrorMessages.InvalidCredentials });
 
-        var passwordVerificationResult = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, password);
-
-        if (passwordVerificationResult == PasswordVerificationResult.Failed)
-            return Unauthorized(new { message = ErrorMessages.InvalidCredentials });
-
-        var jwtKey = _configuration["Jwt:Key"]
-        ?? throw new InvalidOperationException(ErrorMessages.JwtKeyNotConfigured);
-
-        var jwtIssuer = _configuration["Jwt:Issuer"]
-            ?? throw new InvalidOperationException(ErrorMessages.JwtIssuerNotConfigured);
-
-        var jwtAudience = _configuration["Jwt:Audience"]
-            ?? throw new InvalidOperationException(ErrorMessages.JwtAudienceNotConfigured);
-
-        var expirationInHours = int.TryParse(_configuration["Jwt:ExpirationInHours"], out var hours)
-            ? hours
-            : 2;
-
-        var expiresAt = DateTime.UtcNow.AddHours(expirationInHours);
-
-        var claims = new List<Claim>
-    {
-        new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-        new(JwtRegisteredClaimNames.Email, user.Email),
-        new(JwtRegisteredClaimNames.UniqueName, user.Name),
-        new(ClaimTypes.NameIdentifier, user.Id.ToString()),
-        new(ClaimTypes.Name, user.Name),
-        new(ClaimTypes.Email, user.Email)
-    };
-
-        var signingCredentials = new SigningCredentials(
-            new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
-            SecurityAlgorithms.HmacSha256);
-
-        var tokenDescriptor = new JwtSecurityToken(
-            issuer: jwtIssuer,
-            audience: jwtAudience,
-            claims: claims,
-            expires: expiresAt,
-            signingCredentials: signingCredentials);
-
-        var token = new JwtSecurityTokenHandler().WriteToken(tokenDescriptor);
-
-        var response = new LoginUserResponse
+        return Ok(new LoginUserResponse
         {
-            Token = token,
-            ExpiresAt = expiresAt
-        };
-
-        return Ok(response);
+            Token = result.Token,
+            ExpiresAt = result.ExpiresAt
+        });
     }
 
     [HttpPost("register")]

@@ -2,12 +2,31 @@
 
 public class Project
 {
-    public Guid Id { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public string? Description { get; set; } = string.Empty;
-    public Guid UserId { get; set; }
-    public User User { get; set; } = null!;
+    public Guid Id { get; private set; }
+    public string Name { get; private set; } = string.Empty;
+    public string? Description { get; private set; }
+    public Guid UserId { get; private set; }
 
-    public ICollection<TaskItem> Tasks { get; set; } = new List<TaskItem>();
+    public User User { get; private set; } = null!;
+    public ICollection<TaskItem> Tasks { get; private set; } = new List<TaskItem>();
 
+    // Construtor protegido para EF
+    protected Project() { }
+
+    // Factory method — criação centralizada
+    public static Project Create(Guid userId, string name, string? description)
+    {
+        var normalizedName = name.Trim();
+        var normalizedDescription = string.IsNullOrWhiteSpace(description)
+            ? null
+            : description.Trim();
+
+        return new Project
+        {
+            Id = Guid.NewGuid(),
+            Name = normalizedName,
+            Description = normalizedDescription,
+            UserId = userId
+        };
+    }
 }
