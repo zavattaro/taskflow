@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Observable, tap } from 'rxjs';
+import { Observable, tap, map, catchError, throwError } from 'rxjs';
 import { LoginRequest } from '../../features/auth/models/login-request.model';
 import { LoginResponse } from '../../features/auth/models/login-response.model';
 import { environment } from '../../../environments/environment';
@@ -18,11 +18,12 @@ export class AuthService {
     return this.http
       .post<LoginResponse>(`${this.apiUrl}/login`, request)
       .pipe(
-        tap((response) => {
+        tap(response => {
           localStorage.setItem('auth_token', response.token);
-        }
-      ),
-    );
+        }),
+        map(response => response),
+        catchError(error => throwError(() => error))
+      );
   }
 
   logout(): void {
@@ -43,7 +44,7 @@ export class AuthService {
 
     try {
       const payload = this.parseJwtPayload(token);
-      
+
       const name =
         typeof payload['unique_name'] === 'string'
           ? payload['unique_name']
@@ -52,7 +53,7 @@ export class AuthService {
           : typeof payload['email'] === 'string'
           ? payload['email']
           : undefined;
-          
+
       return name ?? 'Usuário';
     } catch {
       return 'Usuário';

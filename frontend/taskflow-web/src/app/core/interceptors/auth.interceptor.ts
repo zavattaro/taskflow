@@ -25,15 +25,21 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       : req;
 
   return next(authReq).pipe(
-    catchError((error: HttpErrorResponse) => {
-      const isUnauthorized = error.status === 401;
+  catchError((error: HttpErrorResponse) => {
+    const isUnauthorized = error.status === 401;
 
-      if (isUnauthorized && !isPublicRoute) {
-        localStorage.removeItem('auth_token');
-        router.navigate(['/login']);
-      }
+    if (isUnauthorized && !isPublicRoute) {
+      localStorage.removeItem('auth_token');
+      router.navigate(['/login']);
+    }
 
-      return throwError(() => error);
-    })
-  );
+    const normalizedError = {
+      message:
+        error.error?.message ||
+        'Erro inesperado ao comunicar com a API.',
+    };
+
+    return throwError(() => normalizedError);
+  })
+ );
 };
