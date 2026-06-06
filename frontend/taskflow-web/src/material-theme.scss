@@ -10,7 +10,7 @@ html {
   @include mat.theme(
     (
       color: (
-        primary: mat.$indigo-palette,
+        primary: mat.$deep-purple-palette,
         tertiary: mat.$purple-palette,
         ),
 
@@ -18,6 +18,11 @@ html {
       density: 0,
     )
   );
+
+  --mat-sys-primary: #8c00ba;
+  --mat-sys-on-primary: #ffffff;
+  --mat-sys-primary-container: #f3d6ff;
+  --mat-sys-on-primary-container: #2e004a;
 }
 
 body {

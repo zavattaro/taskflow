@@ -18,7 +18,7 @@ import { SuccessMessageComponent } from "../../../shared/components/success-mess
           <span class="login-brand__name">TaskFlow</span>
         </div>
 
-        <h1 class="login-title">Bem-vindo</h1>
+        <h1 class="login-title">Bem vindo</h1>
         <p class="login-subtitle">Acesse sua conta para continuar</p>
 
         <form [formGroup]="form" (ngSubmit)="submit()" class="login-form">
@@ -98,7 +98,7 @@ import { SuccessMessageComponent } from "../../../shared/components/success-mess
       .login-brand__name {
         font-size: 1.5rem;
         font-weight: 700;
-        color: var(--mat-sys-primary, #3949ab);
+        color: #8c00ba;
         letter-spacing: 0.02em;
       }
 
@@ -146,8 +146,8 @@ import { SuccessMessageComponent } from "../../../shared/components/success-mess
       }
 
       .login-input:focus {
-        border-color: var(--mat-sys-primary, #3949ab);
-        box-shadow: 0 0 0 2px rgba(57, 73, 171, 0.15);
+        border-color: #8c00ba;
+        box-shadow: 0 0 0 2px rgba(140, 0, 186, 0.15);
       }
 
       .login-submit {

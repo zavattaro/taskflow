@@ -115,7 +115,7 @@ import { AppEmptyStateComponent } from '../../shared/components/app-empty-state/
       .tasks-back {
         display: inline-block;
         font-size: 0.875rem;
-        color: var(--mat-sys-primary, #3949ab);
+        color: var(--mat-sys-primary, #8c00ba);
         text-decoration: none;
         margin-bottom: 16px;
       }
@@ -188,8 +188,8 @@ import { AppEmptyStateComponent } from '../../shared/components/app-empty-state/
       }
 
       .field-input:focus {
-        border-color: var(--mat-sys-primary, #3949ab);
-        box-shadow: 0 0 0 2px rgba(57, 73, 171, 0.15);
+        border-color: var(--mat-sys-primary, #8c00ba);
+        box-shadow: 0 0 0 2px rgba(140, 0, 186, 0.15);
       }
 
       .field-textarea {
@@ -227,7 +227,7 @@ import { AppEmptyStateComponent } from '../../shared/components/app-empty-state/
       }
 
       .task-card--todo { border-left-color: #9e9e9e; }
-      .task-card--doing { border-left-color: var(--mat-sys-primary, #3949ab); }
+      .task-card--doing { border-left-color: var(--mat-sys-primary, #8c00ba); }
       .task-card--done { border-left-color: #2e7d32; }
 
       .task-card__top {
@@ -303,7 +303,7 @@ import { AppEmptyStateComponent } from '../../shared/components/app-empty-state/
       }
 
       .task-select:focus {
-        border-color: var(--mat-sys-primary, #3949ab);
+        border-color: var(--mat-sys-primary, #8c00ba);
       }
 
       .task-select:disabled {

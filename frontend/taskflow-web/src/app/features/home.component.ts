@@ -4,7 +4,7 @@ import { Component } from '@angular/core';
   selector: 'app-home',
   standalone: true,
   template: `
-    <main style="padding: 24px; font-family: Arial, sans-serif;">
+    <main>
       <h1>TaskFlow</h1>
       <p>Frontend Angular inicial funcionando.</p>
     </main>
