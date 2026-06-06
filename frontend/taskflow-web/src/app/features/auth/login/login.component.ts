@@ -98,7 +98,7 @@ import { SuccessMessageComponent } from "../../../shared/components/success-mess
       .login-brand__name {
         font-size: 1.5rem;
         font-weight: 700;
-        color: var(--mat-sys-primary, #1976d2);
+        color: var(--mat-sys-primary, #3949ab);
         letter-spacing: 0.02em;
       }
 
@@ -146,8 +146,8 @@ import { SuccessMessageComponent } from "../../../shared/components/success-mess
       }
 
       .login-input:focus {
-        border-color: var(--mat-sys-primary, #1976d2);
-        box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.15);
+        border-color: var(--mat-sys-primary, #3949ab);
+        box-shadow: 0 0 0 2px rgba(57, 73, 171, 0.15);
       }
 
       .login-submit {

@@ -150,8 +150,8 @@ import { AppEmptyStateComponent } from '../../shared/components/app-empty-state/
       }
 
       .field-input:focus {
-        border-color: var(--mat-sys-primary, #1976d2);
-        box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.15);
+        border-color: var(--mat-sys-primary, #3949ab);
+        box-shadow: 0 0 0 2px rgba(57, 73, 171, 0.15);
       }
 
       .field-textarea {
@@ -192,7 +192,7 @@ import { AppEmptyStateComponent } from '../../shared/components/app-empty-state/
 
       .project-card:hover {
         box-shadow: 0 3px 8px rgba(0,0,0,0.14);
-        border-color: var(--mat-sys-primary, #1976d2);
+        border-color: var(--mat-sys-primary, #3949ab);
         transform: translateY(-1px);
       }
 

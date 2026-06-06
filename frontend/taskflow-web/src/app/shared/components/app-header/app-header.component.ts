@@ -24,7 +24,7 @@ import { AuthService } from '../../../core/services/auth.service';
         gap: 12px;
         padding: 0 24px;
         height: 56px;
-        background-color: var(--mat-sys-primary, #1976d2);
+        background-color: var(--mat-sys-primary, #3949ab);
         color: var(--mat-sys-on-primary, #fff);
         box-shadow: 0 2px 4px rgba(0,0,0,0.2);
       }

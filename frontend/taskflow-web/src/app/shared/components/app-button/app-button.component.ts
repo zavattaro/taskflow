@@ -18,7 +18,7 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
       .app-button {
         padding: 10px 24px;
         cursor: pointer;
-        background-color: var(--mat-sys-primary, #1976d2);
+        background-color: var(--mat-sys-primary, #3949ab);
         color: var(--mat-sys-on-primary, #fff);
         border: none;
         border-radius: 4px;
