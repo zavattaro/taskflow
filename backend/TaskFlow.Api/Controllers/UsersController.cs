@@ -23,9 +23,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost("login")]
-    public async Task<IActionResult> Login(
-    LoginUserRequest request,
-    [FromServices] LoginUserUseCase loginUserUseCase)
+    public async Task<IActionResult> Login(LoginUserRequest request, [FromServices] LoginUserUseCase loginUserUseCase)
     {
         if (string.IsNullOrWhiteSpace(request.Email))
             return BadRequest(new { message = ErrorMessages.EmailRequired });
