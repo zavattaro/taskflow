@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using TaskFlow.Api.Contracts;
 using TaskFlow.Api.Errors;
 using TaskFlow.Domain.Exceptions;
 
@@ -9,6 +10,11 @@ public sealed class ExceptionHandlingMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<ExceptionHandlingMiddleware> _logger;
+
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
 
     public ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
     {
@@ -49,7 +55,7 @@ public sealed class ExceptionHandlingMiddleware
         context.Response.StatusCode = (int)statusCode;
         context.Response.ContentType = "application/json";
 
-        var response = new { message };
-        await context.Response.WriteAsync(JsonSerializer.Serialize(response));
+        var body = new ApiErrorResponse(message);
+        await context.Response.WriteAsync(JsonSerializer.Serialize(body, JsonOptions));
     }
 }

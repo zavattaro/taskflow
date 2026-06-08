@@ -1,14 +1,13 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using TaskFlow.Api.Authorization;
+using TaskFlow.Api.Contracts;
 using TaskFlow.Api.Contracts.Tasks;
 using TaskFlow.Api.Controllers.Base;
 using TaskFlow.Api.Errors;
 using TaskFlow.Application.Tasks.CreateTaskItem;
 using TaskFlow.Application.Tasks.GetTasksByProject;
 using TaskFlow.Application.Tasks.UpdateTaskStatus;
-using TaskFlow.Domain.Enums;
 using TaskFlow.Infrastructure.Persistence;
 
 namespace TaskFlow.Api.Controllers;
@@ -23,7 +22,11 @@ public class TasksController : AuthenticatedControllerBase
     private readonly UpdateTaskStatusUseCase _updateTaskStatusUseCase;
     private readonly GetTasksByProjectUseCase _getTasksByProjectUseCase;
 
-    public TasksController(AppDbContext context, CreateTaskItemUseCase createTaskItemUseCase, UpdateTaskStatusUseCase updateTaskStatusUseCase, GetTasksByProjectUseCase getTasksByProjectUseCase)
+    public TasksController(
+        AppDbContext context,
+        CreateTaskItemUseCase createTaskItemUseCase,
+        UpdateTaskStatusUseCase updateTaskStatusUseCase,
+        GetTasksByProjectUseCase getTasksByProjectUseCase)
     {
         _context = context;
         _createTaskItemUseCase = createTaskItemUseCase;
@@ -38,38 +41,25 @@ public class TasksController : AuthenticatedControllerBase
         var description = request.Description?.Trim();
 
         if (string.IsNullOrWhiteSpace(title))
-            return BadRequest(new { message = ErrorMessages.TitleRequired });
+            return BadRequest(new ApiErrorResponse(ErrorMessages.TitleRequired));
 
         if (!TryGetAuthenticatedUserId(out var userId))
-            return Unauthorized(new { message = ErrorMessages.InvalidUserContext });
+            return Unauthorized(new ApiErrorResponse(ErrorMessages.InvalidUserContext));
 
         var projectExists = await ProjectAuthorizationHelper.UserOwnsProjectAsync(_context, projectId, userId);
 
         if (!projectExists)
-            return NotFound(new { message = ErrorMessages.ProjectNotFound });
+            return NotFound(new ApiErrorResponse(ErrorMessages.ProjectNotFound));
 
-        var command = new CreateTaskItemCommand(
-            projectId,
-            userId,
-            title,
-            description
-        );
-
+        var command = new CreateTaskItemCommand(projectId, userId, title, description);
         var result = await _createTaskItemUseCase.ExecuteAsync(command);
 
-        var response = new TaskItemResponse
-        {
-            Id = result.TaskItemId,
-            Title = result.Title,
-            Description = result.Description,
-            Status = result.Status,
-            ProjectId = result.ProjectId
-        };
-
-        return Created(
-            $"/api/projects/{projectId}/tasks/{result.TaskItemId}",
-            response
+        var response = new TaskItemResponse(
+            result.TaskItemId, result.Title, result.Description,
+            result.Status, result.ProjectId
         );
+
+        return Created($"/api/projects/{projectId}/tasks/{result.TaskItemId}", response);
     }
 
     [HttpPatch("{taskId:guid}/status")]
@@ -78,28 +68,23 @@ public class TasksController : AuthenticatedControllerBase
         var statusValue = request.Status?.Trim();
 
         if (string.IsNullOrWhiteSpace(statusValue))
-            return BadRequest(new { message = ErrorMessages.StatusRequired });
+            return BadRequest(new ApiErrorResponse(ErrorMessages.StatusRequired));
 
         if (!TryGetAuthenticatedUserId(out var userId))
-            return Unauthorized(new { message = ErrorMessages.InvalidUserContext });
+            return Unauthorized(new ApiErrorResponse(ErrorMessages.InvalidUserContext));
 
         var projectExists = await ProjectAuthorizationHelper.UserOwnsProjectAsync(_context, projectId, userId);
 
         if (!projectExists)
-            return NotFound(new { message = ErrorMessages.ProjectNotFound });
+            return NotFound(new ApiErrorResponse(ErrorMessages.ProjectNotFound));
 
         var command = new UpdateTaskStatusCommand(projectId, taskId, statusValue);
-
         var result = await _updateTaskStatusUseCase.ExecuteAsync(command);
 
-        var response = new TaskItemResponse
-        {
-            Id = result.TaskItemId,
-            Title = result.Title,
-            Description = result.Description,
-            Status = result.Status,
-            ProjectId = result.ProjectId
-        };
+        var response = new TaskItemResponse(
+            result.TaskItemId, result.Title, result.Description,
+            result.Status, result.ProjectId
+        );
 
         return Ok(response);
     }
@@ -108,25 +93,19 @@ public class TasksController : AuthenticatedControllerBase
     public async Task<IActionResult> GetAll(Guid projectId)
     {
         if (!TryGetAuthenticatedUserId(out var userId))
-            return Unauthorized(new { message = ErrorMessages.InvalidUserContext });
+            return Unauthorized(new ApiErrorResponse(ErrorMessages.InvalidUserContext));
 
         var projectExists = await ProjectAuthorizationHelper.UserOwnsProjectAsync(_context, projectId, userId);
 
         if (!projectExists)
-            return NotFound(new { message = ErrorMessages.ProjectNotFound });
+            return NotFound(new ApiErrorResponse(ErrorMessages.ProjectNotFound));
 
         var query = new GetTasksByProjectQuery(projectId);
-
         var tasks = await _getTasksByProjectUseCase.ExecuteAsync(query);
 
-        var response = tasks.Select(x => new TaskItemResponse
-        {
-            Id = x.Id,
-            Title = x.Title,
-            Description = x.Description,
-            Status = x.Status,
-            ProjectId = x.ProjectId
-        });
+        var response = tasks.Select(x => new TaskItemResponse(
+            x.Id, x.Title, x.Description, x.Status, x.ProjectId
+        ));
 
         return Ok(response);
     }

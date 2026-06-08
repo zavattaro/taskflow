@@ -1,11 +1,11 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using TaskFlow.Api.Contracts;
 using TaskFlow.Api.Contracts.Projects;
 using TaskFlow.Api.Controllers.Base;
 using TaskFlow.Api.Errors;
 using TaskFlow.Application.Projects.CreateProject;
-using TaskFlow.Infrastructure.Persistence;
+using TaskFlow.Application.Projects.GetAllProjects;
 
 namespace TaskFlow.Api.Controllers;
 
@@ -14,13 +14,15 @@ namespace TaskFlow.Api.Controllers;
 [Route("api/[controller]")]
 public class ProjectsController : AuthenticatedControllerBase
 {
-    private readonly AppDbContext _context;
     private readonly CreateProjectUseCase _createProjectUseCase;
+    private readonly GetAllProjectsUseCase _getAllProjectsUseCase;
 
-    public ProjectsController(AppDbContext context, CreateProjectUseCase createProjectUseCase)
+    public ProjectsController(
+        CreateProjectUseCase createProjectUseCase,
+        GetAllProjectsUseCase getAllProjectsUseCase)
     {
-        _context = context;
         _createProjectUseCase = createProjectUseCase;
+        _getAllProjectsUseCase = getAllProjectsUseCase;
     }
 
     [HttpPost]
@@ -30,22 +32,15 @@ public class ProjectsController : AuthenticatedControllerBase
         var description = request.Description?.Trim();
 
         if (string.IsNullOrWhiteSpace(name))
-            return BadRequest(new { message = ErrorMessages.NameRequired });
+            return BadRequest(new ApiErrorResponse(ErrorMessages.NameRequired));
 
         if (!TryGetAuthenticatedUserId(out var userId))
-            return Unauthorized(new { message = ErrorMessages.InvalidUserContext });
+            return Unauthorized(new ApiErrorResponse(ErrorMessages.InvalidUserContext));
 
         var command = new CreateProjectCommand(userId, name, description);
-
         var result = await _createProjectUseCase.ExecuteAsync(command);
 
-        var response = new ProjectResponse
-        {
-            Id = result.ProjectId,
-            Name = result.Name,
-            Description = result.Description
-        };
-
+        var response = new ProjectResponse(result.ProjectId, result.Name, result.Description);
         return Created($"/api/projects/{result.ProjectId}", response);
     }
 
@@ -53,20 +48,12 @@ public class ProjectsController : AuthenticatedControllerBase
     public async Task<IActionResult> GetAll()
     {
         if (!TryGetAuthenticatedUserId(out var userId))
-            return Unauthorized(new { message = ErrorMessages.InvalidUserContext });
+            return Unauthorized(new ApiErrorResponse(ErrorMessages.InvalidUserContext));
 
-        var projects = await _context.Projects
-            .AsNoTracking()
-            .Where(x => x.UserId == userId)
-            .OrderBy(x => x.Name)
-            .Select(x => new ProjectResponse
-            {
-                Id = x.Id,
-                Name = x.Name,
-                Description = x.Description
-            })
-            .ToListAsync();
+        var query = new GetAllProjectsQuery(userId);
+        var projects = await _getAllProjectsUseCase.ExecuteAsync(query);
 
-        return Ok(projects);
+        var response = projects.Select(x => new ProjectResponse(x.Id, x.Name, x.Description));
+        return Ok(response);
     }
 }

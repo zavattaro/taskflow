@@ -6,10 +6,12 @@ using Microsoft.OpenApi.Models;
 using System.Text;
 using TaskFlow.Api.Middlewares;
 using TaskFlow.Application.Projects.CreateProject;
+using TaskFlow.Application.Projects.GetAllProjects;
 using TaskFlow.Application.Tasks.CreateTaskItem;
 using TaskFlow.Application.Tasks.GetTasksByProject;
 using TaskFlow.Application.Tasks.UpdateTaskStatus;
 using TaskFlow.Application.Users.LoginUser;
+using TaskFlow.Application.Users.RegisterUser;
 using TaskFlow.Domain.Entities;
 using TaskFlow.Infrastructure.Persistence;
 
@@ -58,10 +60,12 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
 builder.Services.AddScoped<CreateProjectUseCase>();
+builder.Services.AddScoped<GetAllProjectsUseCase>();
 builder.Services.AddScoped<CreateTaskItemUseCase>();
 builder.Services.AddScoped<UpdateTaskStatusUseCase>();
 builder.Services.AddScoped<GetTasksByProjectUseCase>();
 builder.Services.AddScoped<LoginUserUseCase>();
+builder.Services.AddScoped<RegisterUserUseCase>();
 
 var jwtKey = builder.Configuration["Jwt:Key"]
     ?? throw new InvalidOperationException("JWT key not configured.");
