@@ -21,7 +21,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost("login")]
-    public async Task<IActionResult> Login(LoginUserRequest request)
+    public async Task<IActionResult> Login(LoginUserRequest request, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(request.Email))
             return BadRequest(new ApiErrorResponse(ErrorMessages.EmailRequired));
@@ -30,16 +30,13 @@ public class UsersController : ControllerBase
             return BadRequest(new ApiErrorResponse(ErrorMessages.PasswordRequired));
 
         var command = new LoginUserCommand(request.Email, request.Password);
-        var result = await _loginUserUseCase.ExecuteAsync(command);
-
-        if (result is null)
-            return Unauthorized(new ApiErrorResponse(ErrorMessages.InvalidCredentials));
+        var result = await _loginUserUseCase.ExecuteAsync(command, ct);
 
         return Ok(new LoginUserResponse(result.Token, result.ExpiresAt));
     }
 
     [HttpPost("register")]
-    public async Task<IActionResult> Register(RegisterUserRequest request)
+    public async Task<IActionResult> Register(RegisterUserRequest request, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(request.Name))
             return BadRequest(new ApiErrorResponse(ErrorMessages.NameRequired));
@@ -51,7 +48,7 @@ public class UsersController : ControllerBase
             return BadRequest(new ApiErrorResponse(ErrorMessages.PasswordRequired));
 
         var command = new RegisterUserCommand(request.Name, request.Email, request.Password);
-        var result = await _registerUserUseCase.ExecuteAsync(command);
+        var result = await _registerUserUseCase.ExecuteAsync(command, ct);
 
         var response = new RegisterUserResponse(result.UserId, result.Name, result.Email);
         return Created($"/api/users/{result.UserId}", response);

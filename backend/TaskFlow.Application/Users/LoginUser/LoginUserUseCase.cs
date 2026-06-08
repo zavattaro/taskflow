@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -6,6 +6,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using TaskFlow.Domain.Entities;
+using TaskFlow.Domain.Exceptions;
 using TaskFlow.Infrastructure.Persistence;
 
 namespace TaskFlow.Application.Users.LoginUser;
@@ -23,22 +24,20 @@ public sealed class LoginUserUseCase
         _configuration = configuration;
     }
 
-    public async Task<LoginUserResult?> ExecuteAsync(LoginUserCommand command)
+    public async Task<LoginUserResult> ExecuteAsync(LoginUserCommand command, CancellationToken ct = default)
     {
         var email = command.Email.Trim().ToLowerInvariant();
-        var password = command.Password.Trim();
 
         var user = await _context.Users
-            .FirstOrDefaultAsync(x => x.Email == email);
+            .FirstOrDefaultAsync(x => x.Email == email, ct);
 
         if (user is null)
-            return null;
+            throw new AuthenticationException();
 
-        var passwordVerificationResult =
-            _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, password);
+        var verification = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, command.Password);
 
-        if (passwordVerificationResult == PasswordVerificationResult.Failed)
-            return null;
+        if (verification == PasswordVerificationResult.Failed)
+            throw new AuthenticationException();
 
         var jwtKey = _configuration["Jwt:Key"]
             ?? throw new InvalidOperationException("JWT key not configured.");
@@ -49,10 +48,7 @@ public sealed class LoginUserUseCase
         var jwtAudience = _configuration["Jwt:Audience"]
             ?? throw new InvalidOperationException("JWT audience not configured.");
 
-        var expirationInHours = int.TryParse(
-            _configuration["Jwt:ExpirationInHours"],
-            out var hours
-        )
+        var expirationInHours = int.TryParse(_configuration["Jwt:ExpirationInHours"], out var hours)
             ? hours
             : 2;
 

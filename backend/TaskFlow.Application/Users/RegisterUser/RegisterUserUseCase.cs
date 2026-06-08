@@ -17,13 +17,13 @@ public sealed class RegisterUserUseCase
         _passwordHasher = passwordHasher;
     }
 
-    public async Task<RegisterUserResult> ExecuteAsync(RegisterUserCommand command)
+    public async Task<RegisterUserResult> ExecuteAsync(RegisterUserCommand command, CancellationToken ct = default)
     {
         var name = command.Name.Trim();
         var email = command.Email.Trim().ToLowerInvariant();
 
         var emailAlreadyExists = await _context.Users
-            .AnyAsync(x => x.Email == email);
+            .AnyAsync(x => x.Email == email, ct);
 
         if (emailAlreadyExists)
             throw new DomainException("Email is already registered.");
@@ -32,7 +32,7 @@ public sealed class RegisterUserUseCase
         var user = User.Create(name, email, passwordHash);
 
         _context.Users.Add(user);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(ct);
 
         return new RegisterUserResult(user.Id, user.Name, user.Email);
     }

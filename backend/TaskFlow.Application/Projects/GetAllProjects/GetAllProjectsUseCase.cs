@@ -12,13 +12,13 @@ public sealed class GetAllProjectsUseCase
         _context = context;
     }
 
-    public async Task<IReadOnlyList<ProjectDto>> ExecuteAsync(GetAllProjectsQuery query)
+    public async Task<IReadOnlyList<ProjectDto>> ExecuteAsync(GetAllProjectsQuery query, CancellationToken ct = default)
     {
         return await _context.Projects
             .AsNoTracking()
             .Where(x => x.UserId == query.UserId)
             .OrderBy(x => x.Name)
             .Select(x => new ProjectDto(x.Id, x.Name, x.Description))
-            .ToListAsync();
+            .ToListAsync(ct);
     }
 }

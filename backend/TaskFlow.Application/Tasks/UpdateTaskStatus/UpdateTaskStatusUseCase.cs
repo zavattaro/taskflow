@@ -14,37 +14,31 @@ public sealed class UpdateTaskStatusUseCase
         _context = context;
     }
 
-    public async Task<UpdateTaskStatusResult> ExecuteAsync(UpdateTaskStatusCommand command)
+    public async Task<UpdateTaskStatusResult> ExecuteAsync(UpdateTaskStatusCommand command, CancellationToken ct = default)
     {
-        var parsed = Enum.TryParse<TaskItemStatus>(
-            command.Status,
-            true,
-            out var newStatus
-        );
+        var parsed = Enum.TryParse<TaskItemStatus>(command.Status, true, out var newStatus);
 
         if (!parsed)
             throw new ValidationException("Status", "Invalid status. Allowed values: Todo, Doing, Done.");
 
+        var projectOwned = await _context.Projects
+            .AnyAsync(p => p.Id == command.ProjectId && p.UserId == command.UserId, ct);
+
+        if (!projectOwned)
+            throw new NotFoundException("Project", command.ProjectId);
+
         var taskItem = await _context.Tasks
-            .FirstOrDefaultAsync(x =>
-                x.Id == command.TaskItemId &&
-                x.ProjectId == command.ProjectId
-            );
+            .FirstOrDefaultAsync(x => x.Id == command.TaskItemId && x.ProjectId == command.ProjectId, ct);
 
         if (taskItem is null)
             throw new NotFoundException("TaskItem", command.TaskItemId);
 
-        // Delegação correta ao domínio
         taskItem.UpdateStatus(newStatus);
-
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(ct);
 
         return new UpdateTaskStatusResult(
-            taskItem.Id,
-            taskItem.Title,
-            taskItem.Description,
-            taskItem.Status.ToString(),
-            taskItem.ProjectId
+            taskItem.Id, taskItem.Title, taskItem.Description,
+            taskItem.Status.ToString(), taskItem.ProjectId
         );
     }
 }

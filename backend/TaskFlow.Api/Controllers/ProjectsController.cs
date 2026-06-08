@@ -26,7 +26,7 @@ public class ProjectsController : AuthenticatedControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create(CreateProjectRequest request)
+    public async Task<IActionResult> Create(CreateProjectRequest request, CancellationToken ct)
     {
         var name = request.Name?.Trim();
         var description = request.Description?.Trim();
@@ -38,20 +38,20 @@ public class ProjectsController : AuthenticatedControllerBase
             return Unauthorized(new ApiErrorResponse(ErrorMessages.InvalidUserContext));
 
         var command = new CreateProjectCommand(userId, name, description);
-        var result = await _createProjectUseCase.ExecuteAsync(command);
+        var result = await _createProjectUseCase.ExecuteAsync(command, ct);
 
         var response = new ProjectResponse(result.ProjectId, result.Name, result.Description);
         return Created($"/api/projects/{result.ProjectId}", response);
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll(CancellationToken ct)
     {
         if (!TryGetAuthenticatedUserId(out var userId))
             return Unauthorized(new ApiErrorResponse(ErrorMessages.InvalidUserContext));
 
         var query = new GetAllProjectsQuery(userId);
-        var projects = await _getAllProjectsUseCase.ExecuteAsync(query);
+        var projects = await _getAllProjectsUseCase.ExecuteAsync(query, ct);
 
         var response = projects.Select(x => new ProjectResponse(x.Id, x.Name, x.Description));
         return Ok(response);

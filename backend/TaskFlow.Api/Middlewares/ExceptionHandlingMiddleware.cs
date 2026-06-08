@@ -38,6 +38,16 @@ public sealed class ExceptionHandlingMiddleware
             _logger.LogWarning(ex, "Not found: {Message}", ex.Message);
             await WriteResponseAsync(context, HttpStatusCode.NotFound, ex.Message);
         }
+        catch (AccessDeniedException ex)
+        {
+            _logger.LogWarning(ex, "Access denied: {Message}", ex.Message);
+            await WriteResponseAsync(context, HttpStatusCode.Forbidden, ex.Message);
+        }
+        catch (AuthenticationException ex)
+        {
+            _logger.LogWarning(ex, "Authentication failed");
+            await WriteResponseAsync(context, HttpStatusCode.Unauthorized, ex.Message);
+        }
         catch (DomainException ex)
         {
             _logger.LogWarning(ex, "Domain error: {Message}", ex.Message);
