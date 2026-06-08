@@ -1,16 +1,19 @@
-﻿using System.Net;
+using System.Net;
 using System.Text.Json;
 using TaskFlow.Api.Errors;
+using TaskFlow.Domain.Exceptions;
 
 namespace TaskFlow.Api.Middlewares;
 
 public sealed class ExceptionHandlingMiddleware
 {
     private readonly RequestDelegate _next;
+    private readonly ILogger<ExceptionHandlingMiddleware> _logger;
 
-    public ExceptionHandlingMiddleware(RequestDelegate next)
+    public ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
     {
         _next = next;
+        _logger = logger;
     }
 
     public async Task InvokeAsync(HttpContext context)
@@ -19,17 +22,34 @@ public sealed class ExceptionHandlingMiddleware
         {
             await _next(context);
         }
-        catch (Exception)
+        catch (ValidationException ex)
         {
-            context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-            context.Response.ContentType = "application/json";
-
-            var response = new
-            {
-                message = ErrorMessages.UnexpectedError
-            };
-
-            await context.Response.WriteAsync(JsonSerializer.Serialize(response));
+            _logger.LogWarning(ex, "Validation error: {Message}", ex.Message);
+            await WriteResponseAsync(context, HttpStatusCode.BadRequest, ex.Message);
         }
+        catch (NotFoundException ex)
+        {
+            _logger.LogWarning(ex, "Not found: {Message}", ex.Message);
+            await WriteResponseAsync(context, HttpStatusCode.NotFound, ex.Message);
+        }
+        catch (DomainException ex)
+        {
+            _logger.LogWarning(ex, "Domain error: {Message}", ex.Message);
+            await WriteResponseAsync(context, HttpStatusCode.BadRequest, ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error");
+            await WriteResponseAsync(context, HttpStatusCode.InternalServerError, ErrorMessages.UnexpectedError);
+        }
+    }
+
+    private static async Task WriteResponseAsync(HttpContext context, HttpStatusCode statusCode, string message)
+    {
+        context.Response.StatusCode = (int)statusCode;
+        context.Response.ContentType = "application/json";
+
+        var response = new { message };
+        await context.Response.WriteAsync(JsonSerializer.Serialize(response));
     }
 }

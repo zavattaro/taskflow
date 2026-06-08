@@ -1,4 +1,5 @@
-﻿using TaskFlow.Domain.Enums;
+using TaskFlow.Domain.Enums;
+using TaskFlow.Domain.Exceptions;
 
 namespace TaskFlow.Domain.Entities;
 
@@ -7,7 +8,7 @@ public class TaskItem
     public Guid Id { get; private set; }
     public string Title { get; private set; } = string.Empty;
     public string? Description { get; private set; }
-    public TaskItemsStatus Status { get; private set; } = TaskItemsStatus.Todo;
+    public TaskItemStatus Status { get; private set; } = TaskItemStatus.Todo;
 
     public Guid ProjectId { get; private set; }
     public Project Project { get; private set; } = null!;
@@ -16,16 +17,18 @@ public class TaskItem
     protected TaskItem() { }
 
     // Factory method — criação centralizada
-    public static TaskItem Create(
-        Guid projectId,
-        string title,
-        string? description
-    )
+    public static TaskItem Create(Guid projectId, string title, string? description)
     {
-        var normalizedTitle = title.Trim();
+        if (projectId == Guid.Empty)
+            throw new ValidationException(nameof(ProjectId), "Project ID is required.");
+
+        var normalizedTitle = (title ?? string.Empty).Trim();
         var normalizedDescription = string.IsNullOrWhiteSpace(description)
             ? null
             : description.Trim();
+
+        if (string.IsNullOrWhiteSpace(normalizedTitle))
+            throw new ValidationException(nameof(Title), "Title is required.");
 
         return new TaskItem
         {
@@ -33,13 +36,26 @@ public class TaskItem
             Title = normalizedTitle,
             Description = normalizedDescription,
             ProjectId = projectId,
-            Status = TaskItemsStatus.Todo
+            Status = TaskItemStatus.Todo
         };
     }
 
     // Comportamento explícito de domínio
-    public void UpdateStatus(TaskItemsStatus newStatus)
+    public void UpdateStatus(TaskItemStatus newStatus)
     {
         Status = newStatus;
+    }
+
+    public void Update(string title, string? description)
+    {
+        var normalizedTitle = (title ?? string.Empty).Trim();
+
+        if (string.IsNullOrWhiteSpace(normalizedTitle))
+            throw new ValidationException(nameof(Title), "Title is required.");
+
+        Title = normalizedTitle;
+        Description = string.IsNullOrWhiteSpace(description)
+            ? null
+            : description.Trim();
     }
 }

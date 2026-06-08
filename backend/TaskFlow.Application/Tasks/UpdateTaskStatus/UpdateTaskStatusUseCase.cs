@@ -1,5 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using TaskFlow.Domain.Enums;
+using TaskFlow.Domain.Exceptions;
 using TaskFlow.Infrastructure.Persistence;
 
 namespace TaskFlow.Application.Tasks.UpdateTaskStatus;
@@ -13,16 +14,16 @@ public sealed class UpdateTaskStatusUseCase
         _context = context;
     }
 
-    public async Task<UpdateTaskStatusResult?> ExecuteAsync(UpdateTaskStatusCommand command)
+    public async Task<UpdateTaskStatusResult> ExecuteAsync(UpdateTaskStatusCommand command)
     {
-        var parsed = Enum.TryParse<TaskItemsStatus>(
+        var parsed = Enum.TryParse<TaskItemStatus>(
             command.Status,
             true,
             out var newStatus
         );
 
         if (!parsed)
-            return null;
+            throw new ValidationException("Status", "Invalid status. Allowed values: Todo, Doing, Done.");
 
         var taskItem = await _context.Tasks
             .FirstOrDefaultAsync(x =>
@@ -31,7 +32,7 @@ public sealed class UpdateTaskStatusUseCase
             );
 
         if (taskItem is null)
-            return null;
+            throw new NotFoundException("TaskItem", command.TaskItemId);
 
         // Delegação correta ao domínio
         taskItem.UpdateStatus(newStatus);

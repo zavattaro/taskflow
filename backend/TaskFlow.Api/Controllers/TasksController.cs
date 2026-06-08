@@ -92,12 +92,6 @@ public class TasksController : AuthenticatedControllerBase
 
         var result = await _updateTaskStatusUseCase.ExecuteAsync(command);
 
-        if (result is null)
-            return BadRequest(new
-            {
-                message = ErrorMessages.InvalidStatus
-            });
-
         var response = new TaskItemResponse
         {
             Id = result.TaskItemId,

@@ -1,8 +1,3 @@
-﻿namespace TaskFlow.Domain.Enums;
-
-public enum  TaskItemsStatus
-{
-    Todo = 1,
-    Doing = 2,
-    Done = 3
-}
+// Este arquivo foi substituído por TaskItemStatus.cs
+// Mantido temporariamente para evitar erros de build
+// TODO: Remover após confirmar que todas as referências foram atualizadas

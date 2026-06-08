@@ -9,6 +9,7 @@ using TaskFlow.Application.Projects.CreateProject;
 using TaskFlow.Application.Tasks.CreateTaskItem;
 using TaskFlow.Application.Tasks.GetTasksByProject;
 using TaskFlow.Application.Tasks.UpdateTaskStatus;
+using TaskFlow.Application.Users.LoginUser;
 using TaskFlow.Domain.Entities;
 using TaskFlow.Infrastructure.Persistence;
 
@@ -60,6 +61,7 @@ builder.Services.AddScoped<CreateProjectUseCase>();
 builder.Services.AddScoped<CreateTaskItemUseCase>();
 builder.Services.AddScoped<UpdateTaskStatusUseCase>();
 builder.Services.AddScoped<GetTasksByProjectUseCase>();
+builder.Services.AddScoped<LoginUserUseCase>();
 
 var jwtKey = builder.Configuration["Jwt:Key"]
     ?? throw new InvalidOperationException("JWT key not configured.");

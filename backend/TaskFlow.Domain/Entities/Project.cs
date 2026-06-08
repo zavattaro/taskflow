@@ -1,4 +1,6 @@
-﻿namespace TaskFlow.Domain.Entities;
+using TaskFlow.Domain.Exceptions;
+
+namespace TaskFlow.Domain.Entities;
 
 public class Project
 {
@@ -16,10 +18,16 @@ public class Project
     // Factory method — criação centralizada
     public static Project Create(Guid userId, string name, string? description)
     {
-        var normalizedName = name.Trim();
+        if (userId == Guid.Empty)
+            throw new ValidationException(nameof(UserId), "User ID is required.");
+
+        var normalizedName = (name ?? string.Empty).Trim();
         var normalizedDescription = string.IsNullOrWhiteSpace(description)
             ? null
             : description.Trim();
+
+        if (string.IsNullOrWhiteSpace(normalizedName))
+            throw new ValidationException(nameof(Name), "Name is required.");
 
         return new Project
         {
@@ -28,5 +36,18 @@ public class Project
             Description = normalizedDescription,
             UserId = userId
         };
+    }
+
+    public void Update(string name, string? description)
+    {
+        var normalizedName = (name ?? string.Empty).Trim();
+
+        if (string.IsNullOrWhiteSpace(normalizedName))
+            throw new ValidationException(nameof(Name), "Name is required.");
+
+        Name = normalizedName;
+        Description = string.IsNullOrWhiteSpace(description)
+            ? null
+            : description.Trim();
     }
 }
