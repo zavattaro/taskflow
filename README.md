@@ -49,6 +49,11 @@ O pipeline roda automaticamente em todo push e pull request para `main`.
 | backend  | `dotnet restore` → `dotnet build` → `dotnet test` (45 testes) |
 | frontend | `npm ci` → `ng build`                                         |
 
+## Documentação
+
+- [Arquitetura do sistema](docs/architecture.md) — camadas, fluxo de requisição, domínio, API, frontend
+- [Decisões técnicas](docs/decisions.md) — ADRs com motivo e consequência de cada escolha
+
 ## Estrutura do projeto
 
 ```
