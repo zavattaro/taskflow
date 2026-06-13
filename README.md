@@ -34,6 +34,15 @@ docker compose up --build -d
 | API      | http://localhost:8080/swagger |
 | Postgres | localhost:5432                |
 
+## Primeiro acesso
+
+O banco é migrado automaticamente na inicialização da API. Para criar o primeiro usuário:
+
+1. Acesse `http://localhost:8080/swagger`
+2. Expanda `POST /api/users/register` e clique em **Try it out**
+3. Preencha nome, e-mail e senha e execute
+4. Acesse `http://localhost:4200` e faça login com as credenciais criadas
+
 ## Parar os containers
 
 ```bash
