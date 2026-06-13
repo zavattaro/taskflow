@@ -27,3 +27,8 @@ obj/
 # User files
 *.user
 *.suo
+
+# Memoria pessoal / board PDI (local, nao versionado)
+CLAUDE.md
+memory/
+TASKS.md
